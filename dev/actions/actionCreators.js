@@ -143,11 +143,29 @@ export function unsetUpdateFlight(flightUpdated) {
 	}
 }
 
+export function changeBookTarget(bookTarget) {
+	return function (dispatch) {
+		dispatch({
+			type: "CHANGE_BOOKTARGET",
+			bookTarget
+		});
+	}
+}
+
 export function updateBookIndex(bookIndex) {
 	return function (dispatch) {
 		dispatch({
 			type: "UPDATE_BOOKINDEX",
 			bookIndex
+		});
+	}
+}
+
+export function processTotalPaxNumber(totalPax) {
+	return function (dispatch) {
+		dispatch({
+			type: "PROCESS_TOTALPAXNUMBER",
+			totalPax
 		});
 	}
 }

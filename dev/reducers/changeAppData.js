@@ -1,11 +1,13 @@
 import { removeArrayElement } from './../helpers';
 
 let loginData = false,
-	user = false,
+	user = 'initial',
 	flightCreated = 'initial',
 	results = false,
 	editId = false,
 	bookIndex = 'initial',
+	bookTarget = {},
+	totalPax = 0,
 	flightUpdated = false,
 	flightDeleted = false,
 	booked = false,
@@ -14,6 +16,8 @@ let loginData = false,
 		user,
 		bookIndex,
 		flightCreated,
+		bookTarget,
+		totalPax,
 		flightUpdated,
 		flightDeleted,
 		results,
@@ -54,6 +58,14 @@ const changeAppData = (state = initialState, action) => {
 			break;
 		}
 
+		case "PROCESS_TOTALPAXNUMBER": {
+			const { totalPax } = action;
+
+			state = {...state, totalPax};
+			return state;
+			break;
+		}
+
 		case "UPDATE_BOOKINDEX": {
 			const { bookIndex } = action;
 
@@ -66,6 +78,14 @@ const changeAppData = (state = initialState, action) => {
 			const { editId } = action;
 
 			state = {...state, editId};
+			return state;
+			break;
+		}
+
+		case "CHANGE_BOOKTARGET": {
+			const { bookTarget } = action;
+
+			state = {...state, bookTarget};
 			return state;
 			break;
 		}

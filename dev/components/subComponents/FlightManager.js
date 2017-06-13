@@ -16,6 +16,7 @@ class FlightManager extends Component {
         this.updateFlight = this.updateFlight.bind(this);
         this.deleteFlight = this.deleteFlight.bind(this);
         this.bookFlight = this.bookFlight.bind(this);
+        this.changeTotalPax = this.changeTotalPax.bind(this);
         this.handleBookFlight = this.handleBookFlight.bind(this);
 
 	    this.state = {
@@ -23,8 +24,10 @@ class FlightManager extends Component {
             flightUpdated: this.props.store.database.flightUpdated,
 	  		flightDeleted: this.props.store.database.flightDeleted,
             results: this.props.store.database.results,
-            bookIndex: this.props.store.database.results,
+            bookIndex: this.props.store.database.bookIndex,
             booked: this.props.store.database.booked,
+            totalPax: this.props.store.database.totalPax,
+            bookTarget: this.props.store.database.bookTarget,
             user: this.props.store.database.user,
             editId: this.props.store.database.editId,
             bookClick: false
@@ -37,6 +40,8 @@ class FlightManager extends Component {
               flightDeleted = nextProps.store.database.flightDeleted,
               results = nextProps.store.database.results,
               editId = nextProps.store.database.editId,
+              totalPax = nextProps.store.database.totalPax,
+              bookTarget = nextProps.store.database.bookTarget,
               booked = nextProps.store.database.booked,
               bookIndex = nextProps.store.database.bookIndex,
               user = nextProps.store.database.user;
@@ -47,6 +52,8 @@ class FlightManager extends Component {
             flightDeleted,
             results,
             booked,
+            totalPax,
+            bookTarget,
             bookIndex,
             user,
             editId
@@ -75,9 +82,20 @@ class FlightManager extends Component {
     }
 
     bookFlight (event) {
-        let bookIndex = Number(event.target.id.split('_')[1]);
+        let bookIndex = Number(event.target.id.split('_')[1]),
+            results = this.state.results;
 
         this.props.updateBookIndex(bookIndex);
+        this.props.changeBookTarget(results[bookIndex]);
+        this.props.processTotalPaxNumber(0);
+    }
+
+    changeTotalPax (event) {
+        event.preventDefault();
+
+        let totalPax = this.refs.pax_number.value;
+
+        this.props.processTotalPaxNumber(totalPax);
     }
 
     handleBookFlight (event) {
@@ -185,7 +203,7 @@ class FlightManager extends Component {
             resultsCondition = results !== undefined && results.length > 0,
             resultsUncondition = results !== undefined && results.length === 0;
 
-        const user = this.state.user;
+        const user = typeof this.state.user === 'boolean' && this.state.user === true;
 
         return (
     		<div id="fm-div-e1">
@@ -297,13 +315,19 @@ class FlightManager extends Component {
                 {
                     resultsCondition && results.map((result, index) => {
                         let tableId = 'tableFlight_' + index.toString(),
+                            bookTarget = this.state.bookTarget,
                             btnEditId = 'btnEdit_' + index.toString(),
                             btnBookId = 'btnBook_' + index.toString(),
                             departure = result.departure_date + ' ' + result.departure_time,
+                            bookTargetDeparture = + new Date(bookTarget.departure_date + ' ' + bookTarget.departure_time),
                             bookCondition = (this.state.bookIndex === index),
                             bookSuccess = this.state.bookClick && this.state.booked,
                             bookFail = this.state.bookClick && !this.state.booked,
-                            arrival = result.arrival_date + ' ' + result.arrival_time;
+                            arrival = result.arrival_date + ' ' + result.arrival_time,
+                            bookTargetArrival = + new Date(bookTarget.arrival_date + ' ' + bookTarget.arrival_time),
+                            totalPax = this.state.totalPax,
+                            totalAmount = bookTarget.price_per_pax * totalPax,
+                            duration = (bookTargetArrival - bookTargetDeparture) / (1000 * 60 * 60) ;
 
                         return (
                             <div key={index} className="tableFlightWrapper col-sm-12">
@@ -361,29 +385,47 @@ class FlightManager extends Component {
                                                         <span className="inputlist-span">
                                                             Name
                                                         </span>
-                                                        <input type="text" title="Enter your fullname" ref="customer_name"
+                                                        <input required type="text" title="Enter your fullname" ref="customer_name"
                                                                className="inputlist-field extraInput" id="customer_name" name="customer_name" placeholder="Full Name"/>
                                                     </label>
                                                     <label htmlFor="customer_email" className="inputlist-label">
                                                         <span className="inputlist-span">
                                                             Email
                                                         </span>
-                                                        <input ref="customer_email" type="text"  title="Enter your email address"
+                                                        <input required ref="customer_email" type="text"  title="Enter your email address"
                                                                className="inputlist-field extraInput" id="customer_email" name="customer_email" placeholder="Email" />
                                                     </label>
                                                     <label htmlFor="pax_number" className="inputlist-label">
                                                         <span className="inputlist-span">
                                                             Persons
                                                         </span>
-                                                        <input ref="pax_number" type="text"  title="Enter your email address"
-                                                               className="inputlist-field extraInput" id="pax_number" name="pax_number" placeholder="Pax number" />
+                                                        <input required ref="pax_number" type="number" min="1" max={bookTarget.availability} title="Enter number of passengers"
+                                                               className="inputlist-field extraInput" id="pax_number" name="pax_number" onChange={(event) => this.changeTotalPax(event)}/>
                                                     </label>
                                                     <label htmlFor="Form of payment" className="inputlist-label">
                                                         <span className="inputlist-span">
                                                             Form of Payment
                                                         </span>
-                                                        <input ref="payment" type="text"  title="Enter your email address"
+                                                        <input required ref="payment" type="text"  title="Enter your payment method"
                                                                className="inputlist-field extraInput" id="payment" name="payment" placeholder="Payment method" />
+                                                    </label>
+                                                    <label htmlFor="ppp" className="inputlist-label book-label-style">
+                                                        <span className="inputlist-span">
+                                                            Price per pax
+                                                        </span>
+                                                        <span ref="ppp" id="ppp" className="bookText">{bookTarget.price_per_pax} EUR</span>
+                                                    </label>
+                                                    <label htmlFor="total" className="inputlist-label book-label-style">
+                                                        <span className="inputlist-span">
+                                                            Total amount
+                                                        </span>
+                                                        <span ref="total" id="total" className="bookText">{totalAmount} EUR</span>
+                                                    </label>
+                                                    <label htmlFor="duration" className="inputlist-label book-label-style">
+                                                        <span className="inputlist-span">
+                                                            Flight Duration
+                                                        </span>
+                                                        <span ref="duration" id="duration" className="bookText">{duration} h</span>
                                                     </label>
                                                 </div>                 
                                             </div>

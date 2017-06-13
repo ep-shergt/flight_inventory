@@ -8,9 +8,8 @@ class UserLogin extends Component {
         this.handleUserLogin = this.handleUserLogin.bind(this);
 
 	    this.state = {
-            user: 'ini',
-            loginData: this.props.store.database.loginData,
-            click: false
+            user: this.props.store.database.user,
+            loginData: this.props.store.database.loginData
 	    };
     }
 
@@ -26,12 +25,6 @@ class UserLogin extends Component {
 
     handleUserLogin (event) {
         event.preventDefault();
-
-       setTimeout(() => {
-            this.setState({
-                click: true
-            });
-        }, 3000);
 
         let loginData = {
             username: this.refs.admin_username.value,
